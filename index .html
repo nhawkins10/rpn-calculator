@@ -1,0 +1,361 @@
+<!DOCTYPE html />
+<html>
+    <head>
+        <title>Calculator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+        <style>
+            :root {
+                --background: #242424;
+                --gray-button: #373737;
+                --orange-button: #d9903c;
+                --blue-button: #6286e6;
+                --output: #8c9686;
+                --light-text: #ffffff;
+                --dark-text: #242424;
+            }
+            
+            body {
+                background: #404040;
+                padding: unset;
+                margin: unset;
+            }
+            
+            
+            @media (min-width: 500px) {
+                #container {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    justify-content: space-around;
+                    align-items: center;
+                }
+            }
+            
+            #calculator {
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+                background-color: var(--background);
+            }           
+            
+            @media (min-width: 500px) {
+                #calculator {
+                    width: 400px;
+                    padding: 20px;
+                    box-shadow: 0px 1px 4px 4px #373737;
+                }
+            }
+            
+            @media (max-width: 501px) {
+                #calculator {
+                    width: 100%;
+                    height: 100%;
+                }
+            } 
+            
+            #output {
+                width: calc(100% - 16px);
+                min-height: 200px;
+                overflow-y: auto;
+                background: var(--output);
+                color: var(--dark-text);
+                padding: 8px;
+                font-family: monospace;
+                font-size: 1.5rem;
+                flex-grow: 2;
+                overflow-wrap: break-word;
+            }
+            
+            @media (min-width: 500px) {
+                #output {
+                    height: calc(100vh * .2);
+                }
+            }
+            
+            #input {
+                all: unset;
+                width: calc(100% - 16px);
+                background: var(--output);
+                color: var(--dark-text);
+                padding: 8px;
+                font-family: monospace;
+                font-size: 1.5rem;
+            }
+            
+            #keyboard {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                width: 100%;
+            }
+            
+            .row {
+                display: flex;
+                gap: 2px;
+            }
+            
+            .button {
+                width: 25%;
+                height: auto;
+                aspect-ratio: 1/1;
+                text-align: center;
+                display: flex;
+                align-items: center;
+                justify-content: space-around;
+                font-size: 2rem;
+                font-family: monospace;
+                border-radius: 10px;
+            }
+            
+            .button.doubleWidth {
+                width: calc(50% + 1px);
+                aspect-ratio: 1/.5
+            }
+            
+            .button.smallWidth {
+                width: 20%;
+                aspect-ratio: 1/1;
+                font-size: 1.2rem;
+            }
+            
+            .gray-button {
+                background-color: var(--gray-button);
+                color: var(--light-text);
+            }
+            
+            .orange-button {
+                background-color: var(--orange-button);
+                color: var(--light-text);
+            }
+            
+            .blue-button {
+                background-color: var(--blue-button);
+                color: var(--light-text);
+            }
+        </style>
+        <script>
+            const stack = [];
+            const operators = ['+', '-', '*', '/', '^', 'v', '%'];
+            
+            document.addEventListener('keydown', (event) => {
+                const keyCode = event.code.toLowerCase();
+                if (keyCode === 'enter' || keyCode === 'numpadenter') {
+                    calculate();
+                } else if (keyCode === 'delete') {
+                    deleteChar();
+                }
+            });
+            
+            const focusInput = () => {
+                document.getElementById('input').focus();
+            };
+            
+            const setInput = (value) => {
+                let currentValue = document.getElementById('input').value;
+                currentValue += value;
+                
+                document.getElementById('input').value = currentValue;
+                focusInput();
+            };
+            
+            const calculate = () => {
+                const inputValue = document.getElementById('input').value;
+                if (!inputValue) {
+                    return;
+                }
+                
+                const elements = inputValue.split(' ');
+                let result = '';
+                
+                for (let element of elements) {
+                    // if number input
+                    if (!Number.isNaN(Number.parseFloat(element))) {
+                        stack.push(Number.parseFloat(element));
+                    // if operator input
+                    } else if (operators.includes(element)) {
+                        if (stack.length < 2) {
+                            return;
+                        }
+                        
+                        switch (element) {
+                            case '+':
+                                result = add();
+                                break;
+                            case '-':
+                                result = subtract();
+                                break;
+                            case '*':
+                                result = multiply();
+                                break;
+                            case '/':
+                                result = divide();
+                                break;
+                            case '^':
+                                result = power();
+                                break;
+                            case 'v':
+                                result = root();
+                                break;
+                            case '%':
+                                result = mod();
+                                break;
+                        }
+                    }
+                }
+                
+                const outputElement = document.getElementById('output');
+                let outputText = outputElement.innerText;
+                outputText += `${inputValue}\n`;
+                outputText += `> ${result}\n`;
+                document.getElementById('output').innerText = outputText;
+                outputElement.scrollTo(0, outputElement.scrollHeight);
+
+                // reset input values
+                document.getElementById('input').value = '';
+                focusInput();
+            };
+            
+            const deleteChar = () => {
+                const inputValue = document.getElementById('input').value;
+                
+                document.getElementById('input').value = inputValue.substring(0, inputValue.length - 1);
+                focusInput();
+            };
+            
+            const add = () => {
+                const operand2 = stack.pop();
+                const operand1 = stack.pop();
+                const result = operand1 + operand2;
+                stack.push(result);
+                return result;
+            };
+
+            const subtract = () => {
+                const operand2 = stack.pop();
+                const operand1 = stack.pop();
+                const result = operand1 - operand2;
+                stack.push(result);
+                return result;
+            };
+
+            const multiply = () => {
+                const operand2 = stack.pop();
+                const operand1 = stack.pop();
+                const result = operand1 * operand2;
+                stack.push(result);
+                return result;
+            };
+
+            const divide = () => {
+                const operand2 = stack.pop();
+                const operand1 = stack.pop();
+                const result = operand1 / operand2;
+                stack.push(result);
+                return result;
+            };
+
+            const power = () => {
+                const operand2 = stack.pop();
+                const operand1 = stack.pop();
+                const result = Math.pow(operand1, operand2);
+                stack.push(result);
+                return result;
+            };
+
+            const root = () => {
+                const operand = stack.pop();
+                const result = Math.sqrt(operand);
+                stack.push(result);
+                return result;
+            };
+            
+            const mod = () => {
+                const operand2 = stack.pop();
+                const operand1 = stack.pop();
+                const result = operand1 % operand2;
+                stack.push(result);
+                return result;
+            };
+            
+            const showStack = () => {
+                const outputElement = document.getElementById('output');
+                let outputText = outputElement.innerText;
+                outputText += `> ${JSON.stringify(stack)}\n`;
+                document.getElementById('output').innerText = outputText;
+                outputElement.scrollTo(0, outputElement.scrollHeight);
+                focusInput();
+            };
+            
+            const showLastStackElement = () => {
+                if (!stack.length) {
+                    return;
+                }
+                const outputElement = document.getElementById('output');
+                let outputText = outputElement.innerText;
+                outputText += `> ${stack[stack.length-1]}\n`;
+                document.getElementById('output').innerText = outputText;
+                outputElement.scrollTo(0, outputElement.scrollHeight);
+                focusInput();
+            };
+            
+            const clearStack = () => {
+                stack.length = 0;
+                const outputElement = document.getElementById('output');
+                let outputText = outputElement.innerText;
+                outputText += `> stack cleared\n`;
+                document.getElementById('output').innerText = outputText;
+                outputElement.scrollTo(0, outputElement.scrollHeight);
+                focusInput();
+            };
+        </script>
+    </head>
+    <body onload='focusInput()'>
+        <div id='container'>
+            <div id='calculator'>
+                <div id='output'>
+                
+                </div>
+                <input id='input' />
+                <div id='keyboard'>
+                    <div class='row'>
+                        <div class='button smallWidth blue-button' onclick='deleteChar()'>&#8592;</div>
+                        <div class='button smallWidth blue-button' onclick='clearStack()'><span>clear<br>all</span></div>
+                        <div class='button smallWidth blue-button' onclick='showStack()'><span>print<br>all</span></div>
+                        <div class='button smallWidth blue-button' onclick='showLastStackElement()'>print</div>
+                        <div class='button smallWidth blue-button' onclick='setInput(" ")'>space</div>
+                    </div>
+                    <div class='row'>
+                        <div class='button smallWidth blue-button' onclick='setInput(" v ")'>&#8730;</div>
+                        <div class='button smallWidth blue-button' onclick='setInput(" ^ ")'><span>X<sup>y</sup></span></div>
+                        <div class='button smallWidth blue-button' onclick='setInput(" % ")'>mod</div>
+                        <div class='button smallWidth blue-button' onclick='setInput("3.141592653589793")'>&#960;</div>
+                        <div class='button smallWidth blue-button' onclick='calculate()'>&#8629;</div>
+                    </div>
+                    <div class='row'>
+                        <div class='button gray-button' onclick='setInput("7")'>7</div>
+                        <div class='button gray-button' onclick='setInput("8")'>8</div>
+                        <div class='button gray-button' onclick='setInput("9")'>9</div>
+                        <div class='button orange-button' onclick='setInput(" / ")'>&#247;</div>
+                    </div>
+                    <div class='row'>
+                        <div class='button gray-button' onclick='setInput("4")'>4</div>
+                        <div class='button gray-button' onclick='setInput("5")'>5</div>
+                        <div class='button gray-button' onclick='setInput("6")'>6</div>
+                        <div class='button orange-button' onclick='setInput(" * ")'>*</div>
+                    </div>
+                    <div class='row'>
+                        <div class='button gray-button' onclick='setInput("1")'>1</div>
+                        <div class='button gray-button' onclick='setInput("2")'>2</div>
+                        <div class='button gray-button' onclick='setInput("3")'>3</div>
+                        <div class='button orange-button' onclick='setInput(" - ")'>-</div>
+                    </div>
+                    <div class='row'>
+                        <div class='button doubleWidth gray-button' onclick='setInput("0")'>0</div>
+                        <div class='button gray-button' onclick='setInput(".")'>.</div>
+                        <div class='button orange-button' onclick='setInput(" + ")'>+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
